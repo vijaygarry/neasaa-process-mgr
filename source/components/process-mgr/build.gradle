@@ -1,0 +1,10 @@
+jar {
+    baseName = 'neasaa-process-mgr'
+}
+
+dependencies {
+	compile libraries.slf4jApi
+    //compile libraries.springBundle
+}
+
+eclipse.project.name = 'neasaa-process-mgr'

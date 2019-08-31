@@ -2,3 +2,4 @@ source/.gradle
 source/components/process-mgr/.settings
 source/components/process-mgr/.classpath
 source/components/process-mgr/.project
+source/components/process-mgr/bin

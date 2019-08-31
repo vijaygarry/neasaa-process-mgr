@@ -1,0 +1,23 @@
+//This file list out all the jars required by this application
+
+// Define variable to use version of specific jars
+ext.springVersion = '5.1.1.RELEASE'
+
+
+// Define list of jars to be used by application
+ext.libraries = [
+	//Core Spring jars
+	springCore : "org.springframework:spring-core:${springVersion}@jar",
+	springContext : "org.springframework:spring-context:${springVersion}@jar",
+	springAop : "org.springframework:spring-aop:${springVersion}@jar",
+	springBeans : "org.springframework:spring-beans:${springVersion}@jar",
+	springExpression : "org.springframework:spring-expression:${springVersion}@jar",
+	// Spring JDBC jars
+	springJdbc: "org.springframework:spring-jdbc:${springVersion}@jar",
+	springTx: "org.springframework:spring-tx:${springVersion}@jar",
+	
+
+    //Logging Jars
+    slf4jApi: "org.slf4j:slf4j-api:1.7.25@jar",
+
+]

@@ -1,0 +1,35 @@
+// all external libraries required by all the project is listed in libraries.gradle.
+// Apply this class to use all jar files.
+apply from: "libraries.gradle"
+
+// Common for all project define here
+allprojects {
+	apply plugin: 'java'
+	apply plugin: 'eclipse'
+	apply plugin: 'idea'
+	apply plugin: 'distribution'
+
+	sourceCompatibility = 1.8
+	targetCompatibility = 1.8
+	
+	
+	repositories {
+    	mavenCentral()
+	}
+
+	task checkVersion << {
+		if(!hasVersion("version")) {
+			throw new GradleException ("Property 'version' is missing. Specify using '-Pversion=' command line option")
+		}
+	}
+
+	project.ext.hasVersion = { prop ->
+		return project.hasProperty("${prop}") && project[prop] && project[prop] != project.DEFAULT_VERSION
+	}
+}
+
+
+//Overriding eclipse task for this project, so .project and .classpath will not be created for this folder.
+task eclipse (overwrite: true) {
+
+}

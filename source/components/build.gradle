@@ -1,0 +1,4 @@
+//Overriding eclipse task for this project, so .project and .classpath will not be created for this folder.
+task eclipse (overwrite: true) {
+
+}

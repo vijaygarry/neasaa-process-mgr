@@ -102,5 +102,14 @@ public class ProcessEntity {
 	public void setNotes(String aNotes) {
 		this.notes = aNotes;
 	}
+
+	@Override
+	public String toString() {
+		return "ProcessEntity [processSeqId=" + this.processSeqId + ", processName=" + this.processName + ", hostname="
+				+ this.hostname + ", status=" + this.status + ", startTime=" + this.startTime + ", lastHeartBeatTime="
+				+ this.lastHeartBeatTime + ", activeStartTime=" + this.activeStartTime + ", endTime=" + this.endTime
+				+ ", osPid=" + this.osPid + ", processMgrVersion=" + this.processMgrVersion + "]";
+	}
+	
 	
 }

@@ -4,7 +4,7 @@ jar {
 
 dependencies {
 	compile libraries.slf4jApi
-    //compile libraries.springBundle
+    compile libraries.springBundle
 }
 
 eclipse.project.name = 'neasaa-process-mgr'

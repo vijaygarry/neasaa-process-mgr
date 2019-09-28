@@ -1,14 +1,26 @@
 package com.neasaa.processmgr.dao;
 
+import java.util.List;
+
 import com.neasaa.processmgr.entity.ProcessEntity;
 
 public interface ProcessDAO {
 	
 	ProcessEntity addNewProcess (ProcessEntity aProcess);
 	
-	ProcessEntity getCurrentActiveProcess (String aProcessName);
+	int insertProcessLock ( ProcessEntity aProcess );
 	
-	void killAllStaleProcess (String aProcessName, long aThreasholdTimeInMillisToConsiderStale);
+	ProcessEntity getCurrentLockProcess ( String aProcessName );
 	
-	ProcessEntity insertProcessLock (ProcessEntity aProcess);
+	void sendProcessHeartBeat (long aProcessId);
+	
+	void killProcessForHost (String aProcessName, String aHostName, String aNotes);
+	
+	void killProcessById (long aProcessId, String aNotes);
+	
+	void releaseProcessLock (long aProcessId);
+	
+	List<ProcessEntity> getStaleProcesses (long aThreasholdTimeInMillisToConsiderStale);
+	
+	void updateProcessToProcessing (long aProcessId);
 }

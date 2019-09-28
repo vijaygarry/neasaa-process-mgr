@@ -21,3 +21,16 @@ ext.libraries = [
     slf4jApi: "org.slf4j:slf4j-api:1.7.25@jar",
 
 ]
+
+// Grouping jars for easy reference.
+libraries << [
+	springBundle: [
+		libraries.springCore,
+		libraries.springContext,
+		libraries.springAop,
+		libraries.springBeans,
+		libraries.springExpression,
+		libraries.springJdbc,
+		libraries.springTx
+	]
+]

@@ -1,5 +1,6 @@
 jar {
     baseName = 'neasaa-process-mgr'
+    dependsOn checkVersion
 }
 
 dependencies {

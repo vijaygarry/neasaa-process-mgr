@@ -1,5 +1,7 @@
 package com.neasaa.processmgr;
 
+import com.neasaa.processmgr.util.GeneralUtilities;
+
 /**
 This class will have all the configuration required for process manager.
 All the configuration will be defaulted while creating instance of this class.
@@ -16,6 +18,7 @@ public class ProcessMgrConfig {
 	 * the process is hung. Default value is 10 sec more than default heart beat interval
 	 */
 	public static final long DEFAULT_THRESHOLD_TIME_BEFORE_PROCESS_CONSIDER_STALE = DEFAULT_HEART_BEAT_INTERVAL_MILLIS + 10_000l;
+	public static final String THIS_HOST_NAME = GeneralUtilities.getLocalHostName();	
 	
 	//Interval for heart beat.
 	private long heartBeatIntervalMillis = DEFAULT_HEART_BEAT_INTERVAL_MILLIS;
@@ -23,6 +26,8 @@ public class ProcessMgrConfig {
 	// Threshold time allowed before process consider stale
 	private long thresholdTimeBeforeProcessConsiderStale = DEFAULT_THRESHOLD_TIME_BEFORE_PROCESS_CONSIDER_STALE;
 
+	private String hostnameToUse = THIS_HOST_NAME;
+	
 	public long getThresholdTimeBeforeProcessConsiderStale() {
 		return this.thresholdTimeBeforeProcessConsiderStale;
 	}
@@ -37,5 +42,13 @@ public class ProcessMgrConfig {
 	
 	public void setHeartBeatIntervalMillis(long aHeartBeatIntervalMillis) {
 		this.heartBeatIntervalMillis = aHeartBeatIntervalMillis;
+	}
+	
+	public void setHostnameToUse(String aHostnameToUse) {
+		this.hostnameToUse = aHostnameToUse;
+	}
+	
+	public String getHostnameToUse() {
+		return this.hostnameToUse;
 	}
 }

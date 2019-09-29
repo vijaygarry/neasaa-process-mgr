@@ -21,7 +21,7 @@ public class ProcessManagerFactory {
 			throw new Exception ("Process with name " + aProcessName + " already registered.");
 		}
 		
-		ProcessManager processManager = new ProcessManager(aProcessName, new Configuration(), this.processDAO, aStatusChangeListner);
+		ProcessManager processManager = new ProcessManager(aProcessName, this.processDAO, aStatusChangeListner);
 		
 		this.processManagerMap.put(aProcessName, processManager);
 		

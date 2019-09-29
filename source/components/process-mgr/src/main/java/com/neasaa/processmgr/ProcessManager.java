@@ -17,30 +17,24 @@ public class ProcessManager {
 	
 	private static final Logger logger = LoggerFactory.getLogger(ProcessManager.class);
 	
-	public static final String THIS_HOST_NAME;
+	public static final String THIS_HOST_NAME;	
 	
 	static {
 		THIS_HOST_NAME = GeneralUtilities.getLocalHostName();
 	}
 	
-	private static final long ONE_MIN_IN_MILLIS = 1000l * 60l;
-	private static final long HEART_BEAT_INTERVAL_MILLIS = ONE_MIN_IN_MILLIS;
-	
-	// 10 sec extra than heart beat interval
-	private static final long DEFAULT_THRESHOLD_TIME_BEFORE_PROCESS_CONSIDER_STALE = HEART_BEAT_INTERVAL_MILLIS + 10_000l;
-	
-	
-			
 	private String processName;
 	private ProcessEntity processDetails;
 	private ProcessDAO processDAO;
+	private ProcessMgrConfig configs;
 	private HeartBeatThread heartBeatThread;
 	private ProcessStatusChangeListner statusChangeListner;
 	
 	/**
-		Create instance of process manager with required configurations.
-	*/
-	public ProcessManager (String aProcessName, Configuration aConfiguration, ProcessDAO aProcessDAO, ProcessStatusChangeListner aStatusChangeListner) {
+	 * Create instance of process manager with required configurations.
+	 */
+	public ProcessManager(String aProcessName, ProcessDAO aProcessDAO,
+			ProcessStatusChangeListner aStatusChangeListner) {
 		this.processName = aProcessName;
 		this.processDAO = aProcessDAO;
 		this.statusChangeListner = aStatusChangeListner;
@@ -53,11 +47,12 @@ public class ProcessManager {
 		this.processDetails.setLastHeartBeatTime(currentTime);
 		this.processDetails.setNumberOfHeartBeat(1);
 		this.processDetails.setOsPid(String.valueOf(SystemUtils.getCurrentJvmProcessId()));
-		this.processDetails.setProcessMgrVersion (SystemUtils.getProcessMgrVersion());
+		this.processDetails.setProcessMgrVersion(SystemUtils.getProcessMgrVersion());
 		this.processDetails.setApplicationVersion("unknown");
 	}
 	
-	public void init () {
+	public void init (ProcessMgrConfig aProcessMgrConfig) {
+		this.configs = aProcessMgrConfig;
 		//Killed all stale processess
 		killAllStaleProcesses();
 		
@@ -73,7 +68,7 @@ public class ProcessManager {
 	}
 	
 	private void killAllStaleProcesses () {
-		List<ProcessEntity> staleProcesses = this.processDAO.getStaleProcesses(DEFAULT_THRESHOLD_TIME_BEFORE_PROCESS_CONSIDER_STALE);
+		List<ProcessEntity> staleProcesses = this.processDAO.getStaleProcesses(this.configs.getThresholdTimeBeforeProcessConsiderStale());
 		if(staleProcesses != null && staleProcesses.size() > 0) {
 			for(ProcessEntity process : staleProcesses) {
 				logger.info("Updating process status to KILLED for process " + process);
@@ -92,7 +87,7 @@ public class ProcessManager {
 			}
 			
 			long timeSinceLastHeartBeat = System.currentTimeMillis() - currentLockProcess.getLastHeartBeatTime().getTime(); 
-			if(timeSinceLastHeartBeat > DEFAULT_THRESHOLD_TIME_BEFORE_PROCESS_CONSIDER_STALE) {
+			if(timeSinceLastHeartBeat > this.configs.getThresholdTimeBeforeProcessConsiderStale()) {
 				logger.info("Looks like process " + currentLockProcess + " is stale. Killing the process to get the lock.");
 				this.processDAO.killProcessById(currentLockProcess.getProcessSeqId(), "Killed this stale instance to acquire lock on host: " + THIS_HOST_NAME);
 			} else { 
@@ -144,7 +139,7 @@ public class ProcessManager {
 		public void run() {
 			long lastHeartBeatTime = System.currentTimeMillis();
 			while(!stopRequested) {
-				if((System.currentTimeMillis() - lastHeartBeatTime) > HEART_BEAT_INTERVAL_MILLIS) {
+				if((System.currentTimeMillis() - lastHeartBeatTime) > configs.getHeartBeatIntervalMillis()) {
 					logger.debug("Sending heartbeat for process id {}", ProcessManager.this.processDetails.getProcessSeqId());
 					try {
 						ProcessEntity updatedProess = ProcessManager.this.processDAO.sendProcessHeartBeat(ProcessManager.this.processDetails.getProcessSeqId());

@@ -5,15 +5,20 @@ This class will have all the configuration required for process manager.
 All the configuration will be defaulted while creating instance of this class.
 Overwrite required parameters.
 */
-public class Configuration {
+public class ProcessMgrConfig {
 	
-	private static final long ONE_MIN_IN_MILLIS = 1000l * 60l;
+	public static final long ONE_MIN_IN_MILLIS = 1000l * 60l;
+	
+	public static final long DEFAULT_HEART_BEAT_INTERVAL_MILLIS = ONE_MIN_IN_MILLIS;
 	
 	/**
 	 * This is default time elapse in millis since last heart beat for process to consider
-	 * the process is hung.
+	 * the process is hung. Default value is 10 sec more than default heart beat interval
 	 */
-	public static final long DEFAULT_THRESHOLD_TIME_BEFORE_PROCESS_CONSIDER_STALE =  ONE_MIN_IN_MILLIS;
+	public static final long DEFAULT_THRESHOLD_TIME_BEFORE_PROCESS_CONSIDER_STALE = DEFAULT_HEART_BEAT_INTERVAL_MILLIS + 10_000l;
+	
+	//Interval for heart beat.
+	private long heartBeatIntervalMillis = DEFAULT_HEART_BEAT_INTERVAL_MILLIS;
 	
 	// Threshold time allowed before process consider stale
 	private long thresholdTimeBeforeProcessConsiderStale = DEFAULT_THRESHOLD_TIME_BEFORE_PROCESS_CONSIDER_STALE;
@@ -26,4 +31,11 @@ public class Configuration {
 		this.thresholdTimeBeforeProcessConsiderStale = aThresholdTimeBeforeProcessConsiderStale;
 	}
 	
+	public long getHeartBeatIntervalMillis() {
+		return this.heartBeatIntervalMillis;
+	}
+	
+	public void setHeartBeatIntervalMillis(long aHeartBeatIntervalMillis) {
+		this.heartBeatIntervalMillis = aHeartBeatIntervalMillis;
+	}
 }

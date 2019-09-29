@@ -3,12 +3,8 @@ package com.neasaa.processmgr.dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -21,11 +17,6 @@ import com.neasaa.processmgr.ProcessStausEnum;
 import com.neasaa.processmgr.entity.ProcessEntity;
 
 public class ProcessDAOImpl implements ProcessDAO {
-
-	/**
-	 * UTC time zone constant.
-	 */
-	public static final String UTC_TIME_ZONE = "UTC";
 	
 	private static final String SCHEMA_NAME = "";
 	
@@ -93,6 +84,7 @@ public class ProcessDAOImpl implements ProcessDAO {
 			+ " from PROCESS P, PROCESSLOCK PL "
 			+ " where P.PROCESSSEQID = PL.PROCESSSEQID "
 			+ " AND P.PROCESSNAME = ? ";
+			//+ " AND P.STATUS = 'PROCESSING' ";
 	
 	public static final String SELECT_ALL_STALE_PROCESSES_SQL = 
 			  " select  P.PROCESSSEQID , P.PROCESSNAME , P.HOSTNAME , P.STATUS , "
@@ -113,61 +105,12 @@ public class ProcessDAOImpl implements ProcessDAO {
 			+ " (PROCESSNAME, HOSTNAME, PROCESSSEQID, LOCKSTARTTIME) "
 			+ " VALUES (?, ?, ?, ?)";
 	
-	/**
-	 * This method check the specified string value. If specified string is null, then set null value for specified index
-	 * else sets specified string at specified index.
-	 * 
-	 * @param aPreparedStatement
-	 * @param aIndex
-	 * @param aStringValue
-	 * @throws SQLException
-	 */
-	public final static void setStringInStatement ( PreparedStatement aPreparedStatement, int aIndex,
-			String aStringValue ) throws SQLException {
-		if(aStringValue == null) {
-			aPreparedStatement.setNull(aIndex, Types.VARCHAR);
-		} else {
-			aPreparedStatement.setString( aIndex, aStringValue );
-		}
-	}
 	
 	
-	/**
-	 * Returns the Sql Timestamp object for specified java.util.Date object.
-	 * 
-	 * @param aDate
-	 * @return sql.Timestamp object for specified date.
-	 */
-	public static Timestamp dateToSqlTimestamp (Date aDate) {
-		if(aDate == null) {
-			return null;
-		}
-		return new Timestamp (aDate.getTime());
-	}
 	
-	/**
-	 * Returns a new Calendar instance whose time zone is set to UTC.
-	 *
-	 * @return a new Calendar instance whose time zone is set to UTC.
-	 */
-	public static Calendar getUtcCalendarInstance () {
-		return Calendar.getInstance( TimeZone.getTimeZone( UTC_TIME_ZONE ) );
-	}
 	
-	public final static void setTimestampInStatement ( PreparedStatement aPreparedStatement, int aIndex,
-			Date aDateValue ) throws SQLException {
-		if(aDateValue == null) {
-			aPreparedStatement.setNull(aIndex, Types.TIMESTAMP);
-		} else {
-			aPreparedStatement.setTimestamp(aIndex, dateToSqlTimestamp( aDateValue ),
-					getUtcCalendarInstance());
-		}
-	}
 	
-	public final static void setLongInStatement ( PreparedStatement aPreparedStatement, int aIndex, long aLongValue )
-			throws SQLException {
-		aPreparedStatement.setLong( aIndex, aLongValue );
-	}
+	
 	
 	private JdbcTemplate jdbcTemplate;
 	
@@ -205,18 +148,18 @@ public class ProcessDAOImpl implements ProcessDAO {
 		PreparedStatement prepareStatement = aConection.prepareStatement(INSERT_PROCESS_SQL, 
 				new String[] { "processseqid" });
 		int index = 0;
-		setStringInStatement(prepareStatement, ++index, aProcess.getProcessName());
-		setStringInStatement(prepareStatement, ++index, aProcess.getHostname());
-		setStringInStatement(prepareStatement, ++index, aProcess.getStatus().name());
-		setTimestampInStatement(prepareStatement, ++index, aProcess.getStartTime());
-		setTimestampInStatement(prepareStatement, ++index, aProcess.getLastHeartBeatTime());
-		setLongInStatement (prepareStatement, ++index, aProcess.getNumberOfHeartBeat());
-		setTimestampInStatement(prepareStatement, ++index, aProcess.getActiveStartTime());
-		setTimestampInStatement(prepareStatement, ++index, aProcess.getEndTime());
-		setStringInStatement(prepareStatement, ++index, aProcess.getOsPid());
-		setStringInStatement(prepareStatement, ++index, aProcess.getApplicationVersion());
-		setStringInStatement(prepareStatement, ++index, aProcess.getProcessMgrVersion());
-		setStringInStatement(prepareStatement, ++index, aProcess.getNotes());
+		JDBCUtils.setStringInStatement(prepareStatement, ++index, aProcess.getProcessName());
+		JDBCUtils.setStringInStatement(prepareStatement, ++index, aProcess.getHostname());
+		JDBCUtils.setStringInStatement(prepareStatement, ++index, aProcess.getStatus().name());
+		JDBCUtils.setTimestampInStatement(prepareStatement, ++index, aProcess.getStartTime());
+		JDBCUtils.setTimestampInStatement(prepareStatement, ++index, aProcess.getLastHeartBeatTime());
+		JDBCUtils.setLongInStatement (prepareStatement, ++index, aProcess.getNumberOfHeartBeat());
+		JDBCUtils.setTimestampInStatement(prepareStatement, ++index, aProcess.getActiveStartTime());
+		JDBCUtils.setTimestampInStatement(prepareStatement, ++index, aProcess.getEndTime());
+		JDBCUtils.setStringInStatement(prepareStatement, ++index, aProcess.getOsPid());
+		JDBCUtils.setStringInStatement(prepareStatement, ++index, aProcess.getApplicationVersion());
+		JDBCUtils.setStringInStatement(prepareStatement, ++index, aProcess.getProcessMgrVersion());
+		JDBCUtils.setStringInStatement(prepareStatement, ++index, aProcess.getNotes());
 		return prepareStatement;
 	}
 
@@ -234,11 +177,11 @@ public class ProcessDAOImpl implements ProcessDAO {
 			@Override
 			public PreparedStatement createPreparedStatement(Connection aConection) throws SQLException {
 				PreparedStatement prepareStatement = aConection.prepareStatement(UPDATE_PROCESS_TO_KILL_STATUS_SQL);
-				setStringInStatement ( prepareStatement, 1, ProcessStausEnum.KILLED.name());
-				setTimestampInStatement ( prepareStatement, 2, new Date() );
-				setStringInStatement ( prepareStatement, 3, aNotes );
-				setStringInStatement ( prepareStatement, 4, aProcessName );
-				setStringInStatement ( prepareStatement, 5, aHostName );
+				JDBCUtils.setStringInStatement ( prepareStatement, 1, ProcessStausEnum.KILLED.name());
+				JDBCUtils.setTimestampInStatement ( prepareStatement, 2, new Date() );
+				JDBCUtils.setStringInStatement ( prepareStatement, 3, aNotes );
+				JDBCUtils.setStringInStatement ( prepareStatement, 4, aProcessName );
+				JDBCUtils.setStringInStatement ( prepareStatement, 5, aHostName );
 				return prepareStatement;
 			}
 		});
@@ -250,8 +193,8 @@ public class ProcessDAOImpl implements ProcessDAO {
 			@Override
 			public PreparedStatement createPreparedStatement(Connection aConection) throws SQLException {
 				PreparedStatement prepareStatement = aConection.prepareStatement(DELETE_PROCESS_LOCK_BY_NAME_SQL);
-				setStringInStatement ( prepareStatement, 1, aProcessName );
-				setStringInStatement ( prepareStatement, 2, aHostName );
+				JDBCUtils.setStringInStatement ( prepareStatement, 1, aProcessName );
+				JDBCUtils.setStringInStatement ( prepareStatement, 2, aHostName );
 				return prepareStatement;
 			}
 		});		
@@ -263,7 +206,7 @@ public class ProcessDAOImpl implements ProcessDAO {
 			@Override
 			public PreparedStatement createPreparedStatement(Connection aConection) throws SQLException {
 				PreparedStatement prepareStatement = aConection.prepareStatement(DELETE_PROCESS_LOCK_BY_ID_SQL);
-				setLongInStatement (prepareStatement, 1, aProcessId);
+				JDBCUtils.setLongInStatement (prepareStatement, 1, aProcessId);
 				return prepareStatement;
 			}
 		});		
@@ -280,10 +223,10 @@ public class ProcessDAOImpl implements ProcessDAO {
 			@Override
 			public PreparedStatement createPreparedStatement(Connection aConection) throws SQLException {
 				PreparedStatement prepareStatement = aConection.prepareStatement(UPDATE_PROCESS_TO_KILL_STATUS_BY_ID_SQL);
-				setStringInStatement ( prepareStatement, 1, ProcessStausEnum.KILLED.name());
-				setTimestampInStatement ( prepareStatement, 2, new Date() );
-				setStringInStatement ( prepareStatement, 3, aNotes );
-				setLongInStatement ( prepareStatement, 4, aProcessId );
+				JDBCUtils.setStringInStatement ( prepareStatement, 1, ProcessStausEnum.KILLED.name());
+				JDBCUtils.setTimestampInStatement ( prepareStatement, 2, new Date() );
+				JDBCUtils.setStringInStatement ( prepareStatement, 3, aNotes );
+				JDBCUtils.setLongInStatement ( prepareStatement, 4, aProcessId );
 				return prepareStatement;
 			}
 		});
@@ -296,8 +239,8 @@ public class ProcessDAOImpl implements ProcessDAO {
 			@Override
 			public PreparedStatement createPreparedStatement(Connection aConection) throws SQLException {
 				PreparedStatement prepareStatement = aConection.prepareStatement(UPDATE_PROCESS_HEART_BEAT_SQL);
-				setTimestampInStatement ( prepareStatement, 1, new Date() );
-				setLongInStatement (prepareStatement, 2, aProcessId);
+				JDBCUtils.setTimestampInStatement ( prepareStatement, 1, new Date() );
+				JDBCUtils.setLongInStatement (prepareStatement, 2, aProcessId);
 				return prepareStatement;
 			}
 		});
@@ -313,9 +256,9 @@ public class ProcessDAOImpl implements ProcessDAO {
 			public PreparedStatement createPreparedStatement(Connection aConection) throws SQLException {
 				PreparedStatement prepareStatement = aConection.prepareStatement(RELEASE_LOCK_FOR_PROCESS_SQL);
 				Date currDate = new Date();
-				setTimestampInStatement ( prepareStatement, 1, currDate );
-				setTimestampInStatement ( prepareStatement, 2, currDate );
-				setLongInStatement (prepareStatement, 3, aProcessId);				
+				JDBCUtils.setTimestampInStatement ( prepareStatement, 1, currDate );
+				JDBCUtils.setTimestampInStatement ( prepareStatement, 2, currDate );
+				JDBCUtils.setLongInStatement (prepareStatement, 3, aProcessId);				
 				return prepareStatement;
 			}
 		});
@@ -337,10 +280,10 @@ public class ProcessDAOImpl implements ProcessDAO {
 			@Override
 			public PreparedStatement createPreparedStatement(Connection aConection) throws SQLException {
 				PreparedStatement prepareStatement = aConection.prepareStatement(INSERT_PROCESS_LOCK_SQL);
-				setStringInStatement ( prepareStatement, 1, aProcess.getProcessName() );
-				setStringInStatement ( prepareStatement, 2, aProcess.getHostname () );
-				setLongInStatement ( prepareStatement, 3, aProcess.getProcessSeqId() );
-				setTimestampInStatement ( prepareStatement, 4, new Date() );
+				JDBCUtils.setStringInStatement ( prepareStatement, 1, aProcess.getProcessName() );
+				JDBCUtils.setStringInStatement ( prepareStatement, 2, aProcess.getHostname () );
+				JDBCUtils.setLongInStatement ( prepareStatement, 3, aProcess.getProcessSeqId() );
+				JDBCUtils.setTimestampInStatement ( prepareStatement, 4, new Date() );
 				return prepareStatement;
 			}
 		});
@@ -367,9 +310,9 @@ public class ProcessDAOImpl implements ProcessDAO {
 			public PreparedStatement createPreparedStatement(Connection aConection) throws SQLException {
 				PreparedStatement prepareStatement = aConection.prepareStatement(UPDATE_PROCESS_TO_PROCESSING_SQL);
 				Date currDate = new Date();
-				setTimestampInStatement ( prepareStatement, 1, currDate );
-				setTimestampInStatement ( prepareStatement, 2, currDate );
-				setLongInStatement (prepareStatement, 3, aProcessId);				
+				JDBCUtils.setTimestampInStatement ( prepareStatement, 1, currDate );
+				JDBCUtils.setTimestampInStatement ( prepareStatement, 2, currDate );
+				JDBCUtils.setLongInStatement (prepareStatement, 3, aProcessId);				
 				return prepareStatement;
 			}
 		});		

@@ -102,6 +102,7 @@ public class ProcessManager {
 				this.processDAO.killProcessById(currentLockProcess.getProcessSeqId(),
 						"Killed this stale instance to acquire lock on host: " + this.configs.getHostnameToUse());
 			} else {
+				logger.info("Currently host " + currentLockProcess.getHostname() + " has lock for process " + currentLockProcess.getProcessName() + " id " + currentLockProcess.getProcessSeqId());
 				return false;
 			}
 		}

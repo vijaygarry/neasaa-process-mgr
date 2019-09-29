@@ -16,15 +16,18 @@ public class ProcessRowMapper implements RowMapper<ProcessEntity> {
 		process.setProcessName(aRs.getString( "PROCESSNAME") );
 		process.setHostname (aRs.getString( "HOSTNAME") );
 		process.setStatus (ProcessStausEnum.valueOf(aRs.getString( "STATUS")));
-		process.setStartTime(aRs.getDate( "STARTTIME") );
-		process.setLastHeartBeatTime(aRs.getDate( "LASTHEARTBEATTIME") );
+		process.setStartTime(JDBCUtils.getTimestampFromResult( aRs,"STARTTIME") );
+		process.setLastHeartBeatTime(JDBCUtils.getTimestampFromResult( aRs, "LASTHEARTBEATTIME") );
 		process.setNumberOfHeartBeat(aRs.getLong("NUMBEROFHEARTBEAT")  );
-		process.setActiveStartTime(aRs.getDate( "ACTIVESTARTTIME") );
-		process.setEndTime (aRs.getDate( "ENDTIME") );
+		process.setActiveStartTime(JDBCUtils.getTimestampFromResult( aRs, "ACTIVESTARTTIME") );
+		process.setEndTime (JDBCUtils.getTimestampFromResult( aRs, "ENDTIME") );
 		process.setOsPid(aRs.getString( "OSPID") );
 		process.setApplicationVersion(aRs.getString( "APPLICATIONVERSION") );
 		process.setProcessMgrVersion(aRs.getString( "PROCESSMGRVERSION") );
 		process.setNotes (aRs.getString( "NOTES") );
 		return process;
 	}
+	
+	
+	
 }

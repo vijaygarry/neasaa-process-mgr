@@ -35,25 +35,26 @@ public class ProcessManager {
 	private ProcessEntity processDetails;
 	private ProcessDAO processDAO;
 	private HeartBeatThread heartBeatThread;
+	private ProcessStatusChangeListner statusChangeListner;
 	
 	/**
 		Create instance of process manager with required configurations.
 	*/
-	public ProcessManager (String aProcessName, Configuration aConfiguration, ProcessDAO aProcessDAO) {
+	public ProcessManager (String aProcessName, Configuration aConfiguration, ProcessDAO aProcessDAO, ProcessStatusChangeListner aStatusChangeListner) {
 		this.processName = aProcessName;
 		this.processDAO = aProcessDAO;
-		this.processDetails = new ProcessEntity();
+		this.statusChangeListner = aStatusChangeListner;
 		Date currentTime = new Date();
-		ProcessEntity processEntity = new ProcessEntity();
-		processEntity.setProcessName(aProcessName);
-		processEntity.setHostname(THIS_HOST_NAME);
-		processEntity.setStatus(ProcessStausEnum.WAITING);
-		processEntity.setStartTime(currentTime);
-		processEntity.setLastHeartBeatTime(currentTime);
-		processEntity.setNumberOfHeartBeat(1);
-		processEntity.setOsPid(String.valueOf(SystemUtils.getCurrentJvmProcessId()));
-		processEntity.setProcessMgrVersion (SystemUtils.getProcessMgrVersion());
-		processEntity.setApplicationVersion("unknown");
+		this.processDetails = new ProcessEntity();
+		this.processDetails.setProcessName(aProcessName);
+		this.processDetails.setHostname(THIS_HOST_NAME);
+		this.processDetails.setStatus(ProcessStausEnum.WAITING);
+		this.processDetails.setStartTime(currentTime);
+		this.processDetails.setLastHeartBeatTime(currentTime);
+		this.processDetails.setNumberOfHeartBeat(1);
+		this.processDetails.setOsPid(String.valueOf(SystemUtils.getCurrentJvmProcessId()));
+		this.processDetails.setProcessMgrVersion (SystemUtils.getProcessMgrVersion());
+		this.processDetails.setApplicationVersion("unknown");
 	}
 	
 	public void init () {
@@ -103,10 +104,23 @@ public class ProcessManager {
 		// Current lock is stale.
 		
 		//Trying to acquire lock
-		
-		this.processDAO.insertProcessLock(processDetails);
-		this.processDAO.updateProcessToProcessing(processDetails.getProcessSeqId());
+		this.processDetails = this.processDAO.lockProcess(this.processDetails);
+		if(this.processDetails.getStatus() == ProcessStausEnum.PROCESSING && this.statusChangeListner != null) {
+			this.statusChangeListner.lockAcquired();
+		}
 		return true;
+	}
+	
+	public boolean isLockActive () {
+		//get current active process for given process name
+		ProcessEntity currentLockProcess = this.processDAO.getCurrentLockProcess(processName);
+		
+		if (currentLockProcess != null) {
+			if (this.processDetails.getHostname().equals(currentLockProcess.getHostname())) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	
@@ -132,7 +146,20 @@ public class ProcessManager {
 			while(!stopRequested) {
 				if((System.currentTimeMillis() - lastHeartBeatTime) > HEART_BEAT_INTERVAL_MILLIS) {
 					logger.debug("Sending heartbeat for process id {}", ProcessManager.this.processDetails.getProcessSeqId());
-					ProcessManager.this.processDAO.sendProcessHeartBeat(ProcessManager.this.processDetails.getProcessSeqId());
+					try {
+						ProcessEntity updatedProess = ProcessManager.this.processDAO.sendProcessHeartBeat(ProcessManager.this.processDetails.getProcessSeqId());
+						if(ProcessManager.this.processDetails.getStatus() == ProcessStausEnum.PROCESSING && updatedProess.getStatus() != ProcessStausEnum.PROCESSING) {
+							if(statusChangeListner != null) {
+								logger.info("Lock released for process" + updatedProess);
+								statusChangeListner.lockReleased();
+							}
+						}
+						ProcessManager.this.processDetails = updatedProess;
+					} catch (Exception ex) {
+						logger.error("Failed to send heartbeat for process " + ProcessManager.this.processDetails, ex);
+					}
+					//Even if fails to send heartbeat, wait for next heart beat time.
+					lastHeartBeatTime = System.currentTimeMillis();
 				}
 				try {
 					sleep(1000);
@@ -141,49 +168,4 @@ public class ProcessManager {
 			}
 		}
 	}
-	
-//	/**
-//	 * Kill all the process for specified process name for current host.
-//	 * 
-//	 * @param aProcessName
-//	 */
-//	private void killProcessForHost (String aProcessName) {
-//		this.processDAO.updateProcessStatusToKill(aProcessName, THIS_HOST_NAME, "Killed this instance to start the new instance on same host");
-//	}
-	
-//	public ProcessEntity acquireLock (ProcessEntity aProcess) {
-//		ProcessEntity currentActiveProcess = this.processDAO.getCurrentActiveProcess(aProcess.getProcessName());
-//		
-//		if(currentActiveProcess == null) {
-//			//No active process, so acquire lock.
-//			
-//		}
-//		
-//		if(currentActiveProcess != null) {
-//			logger.info("Process with name " + aProcess.getProcessName() + " is actively processing on host " + currentActiveProcess.getHostname());
-//		}
-//		
-//		return aProcess;
-//	}
-	
-//	public ProcessEntity releaseLock (ProcessEntity aProcess) {
-//		return aProcess;
-//	}
-//	
-//	public void sendHeartBeat (ProcessEntity aProcess) {
-//		
-//	}
-//	
-//	public ProcessEntity addNewProcessAndacquireLock (String aProcessName) {
-//		killAllStaleProcess(aProcessName);
-//		return null;
-//	}
-	
-//	private void killAllStaleProcess (String aProcessName) {
-//		
-//	}
-//	
-//	private boolean isProcessActiveOnOtherHost (String aProcessName) {
-//		return true;
-//	}
 }

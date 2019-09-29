@@ -15,13 +15,13 @@ public class ProcessManagerFactory {
 	
 	private Map<String, ProcessManager> processManagerMap = new HashMap<>();
 	
-	public ProcessManager getProcessManager(String aProcessName) throws Exception {
+	public ProcessManager getProcessManager(String aProcessName, ProcessStatusChangeListner aStatusChangeListner) throws Exception {
 		
 		if(this.processManagerMap.get(aProcessName) != null) {
 			throw new Exception ("Process with name " + aProcessName + " already registered.");
 		}
 		
-		ProcessManager processManager = new ProcessManager(aProcessName, new Configuration(), this.processDAO);
+		ProcessManager processManager = new ProcessManager(aProcessName, new Configuration(), this.processDAO, aStatusChangeListner);
 		
 		this.processManagerMap.put(aProcessName, processManager);
 		

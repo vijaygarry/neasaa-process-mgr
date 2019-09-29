@@ -27,7 +27,9 @@ public class ProcessDAOImpl implements ProcessDAO {
 	 */
 	public static final String UTC_TIME_ZONE = "UTC";
 	
-	public static final String KILL_STALE_PROCESS = "UPDATE SAIX_AUTH.PROCESS "
+	private static final String SCHEMA_NAME = "";
+	
+	public static final String KILL_STALE_PROCESS = "UPDATE " + SCHEMA_NAME + "PROCESS "
 			+ " SET  STATUS = '" + ProcessStausEnum.KILLED + "', "
 			+ " ENDTIME = ?, "
 			+ " NOTES = ?"
@@ -36,14 +38,14 @@ public class ProcessDAOImpl implements ProcessDAO {
 			+ " AND LASTHEARTBEATTIME < ? ";
 	
 	public static final String INSERT_PROCESS_SQL = 
-			  "INSERT INTO PROCESS "
+			  "INSERT INTO " + SCHEMA_NAME + "PROCESS "
 			+ "(PROCESSNAME, HOSTNAME, STATUS, STARTTIME, LASTHEARTBEATTIME, "
 			+ " NUMBEROFHEARTBEAT, ACTIVESTARTTIME, ENDTIME, OSPID, APPLICATIONVERSION, "
 			+ " PROCESSMGRVERSION, NOTES) "
 			+ " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	
 	public static final String UPDATE_PROCESS_TO_KILL_STATUS_SQL = 
-			  "UPDATE PROCESS "
+			  "UPDATE " + SCHEMA_NAME + "PROCESS "
 			+ " SET STATUS = ? , ENDTIME = ? , "
 			+ " NOTES = ?  "
 			+ " where PROCESSNAME = ?"
@@ -51,13 +53,13 @@ public class ProcessDAOImpl implements ProcessDAO {
 			+ " AND STATUS IN ('WAITING' ,'PROCESSING')";
 	
 	public static final String UPDATE_PROCESS_TO_KILL_STATUS_BY_ID_SQL = 
-			  "UPDATE PROCESS "
+			  "UPDATE " + SCHEMA_NAME + "PROCESS "
 			+ " SET STATUS = ? , ENDTIME = ? , "
 			+ " NOTES = ?  "
 			+ " where PROCESSSEQID = ?";
 	
 	public static final String UPDATE_PROCESS_TO_PROCESSING_SQL = 
-			  " UPDATE PROCESS "
+			  " UPDATE " + SCHEMA_NAME + "PROCESS "
 			+ " SET STATUS = 'PROCESSING',"
 			+ " LASTHEARTBEATTIME = ? , NUMBEROFHEARTBEAT = NUMBEROFHEARTBEAT + 1 , "
 			+ " ACTIVESTARTTIME = ? "
@@ -66,12 +68,12 @@ public class ProcessDAOImpl implements ProcessDAO {
 	public static final String UPDATE_PROCESS_HEART_BEAT_SQL = 
 			  " UPDATE PROCESS "
 			+ " SET LASTHEARTBEATTIME = ? , "
-			+ " NUMBEROFHEARTBEAT = NUMBEROFHEARTBEAT + 1, "
+			+ " NUMBEROFHEARTBEAT = NUMBEROFHEARTBEAT + 1 "
 			+ " where PROCESSSEQID = ?";
 	
 	public static final String DELETE_PROCESS_LOCK_BY_NAME_SQL = 
-			    " DELETE PROCESSLOCK "
-			  + " PROCESSNAME = ? and HOSTNAME = ?";
+			    " DELETE  PROCESSLOCK "
+			  + " where PROCESSNAME = ? and HOSTNAME = ?";
 	
 	public static final String DELETE_PROCESS_LOCK_BY_ID_SQL = 
 		    " DELETE PROCESSLOCK "
@@ -98,6 +100,13 @@ public class ProcessDAOImpl implements ProcessDAO {
 			+ " P.ENDTIME , P.OSPID , P.APPLICATIONVERSION , P.PROCESSMGRVERSION , P.NOTES  "
 			+ " from PROCESS P"
 			+ " where LASTHEARTBEATTIME < ?";
+	
+	public static final String GET_PROCESS_BY_ID_SQL = 
+			  " select  P.PROCESSSEQID , P.PROCESSNAME , P.HOSTNAME , P.STATUS , "
+			+ " P.STARTTIME , P.LASTHEARTBEATTIME , P.NUMBEROFHEARTBEAT , P.ACTIVESTARTTIME , "
+			+ " P.ENDTIME , P.OSPID , P.APPLICATIONVERSION , P.PROCESSMGRVERSION , P.NOTES  "
+			+ " from PROCESS P"
+			+ " where PROCESSSEQID = ? ";
 	
 	public static final String INSERT_PROCESS_LOCK_SQL = 
 			  " INSERT INTO PROCESSLOCK "
@@ -193,7 +202,8 @@ public class ProcessDAOImpl implements ProcessDAO {
 	
 
 	public PreparedStatement buildInsertStatement(Connection aConection, ProcessEntity aProcess) throws SQLException {
-		PreparedStatement prepareStatement = aConection.prepareStatement(INSERT_PROCESS_SQL);
+		PreparedStatement prepareStatement = aConection.prepareStatement(INSERT_PROCESS_SQL, 
+				new String[] { "processseqid" });
 		int index = 0;
 		setStringInStatement(prepareStatement, ++index, aProcess.getProcessName());
 		setStringInStatement(prepareStatement, ++index, aProcess.getHostname());
@@ -281,7 +291,7 @@ public class ProcessDAOImpl implements ProcessDAO {
 	
 	@Override
 	@Transactional (transactionManager= "transactionManager", propagation = Propagation.REQUIRED, readOnly = false, rollbackFor = Exception.class)
-	public void sendProcessHeartBeat (long aProcessId) {
+	public ProcessEntity sendProcessHeartBeat (long aProcessId) {
 		getJdbcTemplate().update( new PreparedStatementCreator() {
 			@Override
 			public PreparedStatement createPreparedStatement(Connection aConection) throws SQLException {
@@ -291,6 +301,7 @@ public class ProcessDAOImpl implements ProcessDAO {
 				return prepareStatement;
 			}
 		});
+		return getProcessById(aProcessId);
 	}
 	
 	@Override
@@ -321,9 +332,7 @@ public class ProcessDAOImpl implements ProcessDAO {
 	}
 	
 	
-	@Override
-	@Transactional (transactionManager= "transactionManager", propagation = Propagation.REQUIRED, readOnly = false, rollbackFor = Exception.class)
-	public int insertProcessLock ( ProcessEntity aProcess ) {
+	private int insertProcessLock ( ProcessEntity aProcess ) {
 		return getJdbcTemplate().update( new PreparedStatementCreator() {
 			@Override
 			public PreparedStatement createPreparedStatement(Connection aConection) throws SQLException {
@@ -344,10 +353,15 @@ public class ProcessDAOImpl implements ProcessDAO {
 		return getJdbcTemplate().query(SELECT_ALL_STALE_PROCESSES_SQL, new ProcessRowMapper(), threasholdDate);
 	}
 
-
 	@Override
 	@Transactional (transactionManager= "transactionManager", propagation = Propagation.REQUIRED, readOnly = false, rollbackFor = Exception.class)
-	public void updateProcessToProcessing(long aProcessId) {
+	public ProcessEntity lockProcess(ProcessEntity aProcess) {
+		insertProcessLock ( aProcess );
+		updateProcessToProcessing (aProcess.getProcessSeqId());
+		return getProcessById(aProcess.getProcessSeqId());
+	}
+	
+	private void updateProcessToProcessing(long aProcessId) {
 		getJdbcTemplate().update( new PreparedStatementCreator() {
 			@Override
 			public PreparedStatement createPreparedStatement(Connection aConection) throws SQLException {
@@ -360,5 +374,13 @@ public class ProcessDAOImpl implements ProcessDAO {
 			}
 		});		
 	}
+
+	private ProcessEntity getProcessById (long aProcessId) {
+		List<ProcessEntity> processes = getJdbcTemplate().query(GET_PROCESS_BY_ID_SQL, new ProcessRowMapper(), aProcessId);
+		if(processes != null && processes.size() > 0) {
+			return processes.get(0);
+		}
+		return null;
+	}	
 
 }

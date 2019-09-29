@@ -8,11 +8,13 @@ public interface ProcessDAO {
 	
 	ProcessEntity addNewProcess (ProcessEntity aProcess);
 	
-	int insertProcessLock ( ProcessEntity aProcess );
+	ProcessEntity lockProcess (ProcessEntity aProcess);
+//	int insertProcessLock ( ProcessEntity aProcess );
+//	void updateProcessToProcessing (long aProcessId);
 	
 	ProcessEntity getCurrentLockProcess ( String aProcessName );
 	
-	void sendProcessHeartBeat (long aProcessId);
+	ProcessEntity sendProcessHeartBeat (long aProcessId);
 	
 	void killProcessForHost (String aProcessName, String aHostName, String aNotes);
 	
@@ -22,5 +24,5 @@ public interface ProcessDAO {
 	
 	List<ProcessEntity> getStaleProcesses (long aThreasholdTimeInMillisToConsiderStale);
 	
-	void updateProcessToProcessing (long aProcessId);
+	
 }
